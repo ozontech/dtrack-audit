@@ -19,7 +19,6 @@ func main() {
 	var inputFileName, projectId, apiKey, apiUrl string
 	var syncMode bool
 	var uploadResult dtrack.UploadResult
-	var findings []dtrack.Finding
 	var timeout int
 
 	flag.Usage = func() {
@@ -52,13 +51,6 @@ func main() {
 	if uploadResult.Token != "" && syncMode {
 		err := apiClient.PollTokenBeingProcessed(uploadResult.Token, time.After(time.Duration(timeout)*time.Second))
 		checkError(err)
-		findings, err = apiClient.GetFindings(projectId)
-		checkError(err)
-		fmt.Println(findings)
-		if len(findings) > 0 {
-			log.Fatal(fmt.Errorf("Vulnerabilities found!"))
-		}
-
 		findings, err := apiClient.GetFindings(projectId)
 		checkError(err)
 		if len(findings) > 0 {
