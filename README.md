@@ -1,5 +1,5 @@
 # dtrack-audit
-OWASP Dependency Track API client
+[OWASP Dependency Track](https://dependencytrack.org) API client
 
 ## Install
 
