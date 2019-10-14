@@ -1,5 +1,5 @@
 # dtrack-audit
-[OWASP Dependency Track](https://dependencytrack.org) API client
+[OWASP Dependency Track](https://dependencytrack.org) API client. See [Dependency-Track docs: Continuous Integration & Delivery](https://docs.dependencytrack.org/usage/cicd/) for use case.
 
 ## Install
 
@@ -33,6 +33,7 @@ Usage of program:
 ### Sample output
 
 ```bash
+$ cyclonedx-bom -o bom.xml
 $ dtrack-audit -s
 
 2019/10/14 13:04:34 SBOM file is successfully uploaded to DTrack API. Result token is 12345f5e-4ccb-45fe-b8fd-1234a8bf0081
