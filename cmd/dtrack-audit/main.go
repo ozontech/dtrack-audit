@@ -16,7 +16,7 @@ func checkError(e error) {
 }
 
 func main() {
-	var inputFileName, projectId, apiKey, apiUrl string
+	var inputFileName, projectId, apiKey, apiUrl, severityFilter string
 	var syncMode bool
 	var uploadResult dtrack.UploadResult
 	var timeout int
@@ -31,7 +31,8 @@ func main() {
 	flag.StringVar(&projectId, "p", os.Getenv("DTRACK_PROJECT_ID"), "Project ID (Required)")
 	flag.StringVar(&apiKey, "k", os.Getenv("DTRACK_API_KEY"), "API Key (Required)")
 	flag.StringVar(&apiUrl, "u", os.Getenv("DTRACK_API_URL"), "API URL (Required)")
-	flag.BoolVar(&syncMode, "s", false, "Sync mode enabled (Upload SBOM file and waith for scan result)")
+	flag.StringVar(&severityFilter, "g", "unassigned", "With Sync mode enabled show result and fail an audit if the results include a vulnerability with a severity of specified level or higher. Severity levels are: critical, high, medium, low, info, unassigned")
+	flag.BoolVar(&syncMode, "s", false, "Sync mode enabled. It is meaning: upload SBOM file, wait for scan result, show it and exit with non-zero code")
 	flag.IntVar(&timeout, "t", 25, "Max timeout in second for polling API for project findings")
 	flag.Parse()
 
@@ -51,7 +52,7 @@ func main() {
 	if uploadResult.Token != "" && syncMode {
 		err := apiClient.PollTokenBeingProcessed(uploadResult.Token, time.After(time.Duration(timeout)*time.Second))
 		checkError(err)
-		findings, err := apiClient.GetFindings(projectId)
+		findings, err := apiClient.GetFindings(projectId, severityFilter)
 		checkError(err)
 		if len(findings) > 0 {
 			fmt.Printf("%d vulnerabilities found!\n\n", len(findings))

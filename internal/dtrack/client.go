@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -155,7 +156,54 @@ type Finding struct {
 	Matrix string        `json:"matrix"`
 }
 
-func (apiClient ApiClient) GetFindings(projectId string) (result []Finding, err error) {
+type Evaluator interface {
+	Evaluate(f Finding) bool
+}
+
+type Gate struct {
+	minimalSeverity string
+}
+
+func (g Gate) Evaluate(f Finding) bool {
+	severityLevels := map[string]int{
+		"CRITICAL":   0,
+		"HIGH":       1,
+		"MEDIUM":     2,
+		"LOW":        3,
+		"INFO":       4,
+		"UNASSIGNED": 5,
+	}
+
+	sLevel, ok := severityLevels[strings.ToUpper(f.Vuln.Severity)]
+
+	if ok == false {
+		return false
+	}
+
+	minimalLevel, ok := severityLevels[strings.ToUpper(g.minimalSeverity)]
+
+	if ok == false {
+		return false
+	}
+
+	if sLevel <= minimalLevel {
+		return true
+	}
+	return false
+}
+
+func Filter(vs []Finding, f Evaluator) []Finding {
+	result := make([]Finding, 0)
+	for _, v := range vs {
+		if f.Evaluate(v) {
+			result = append(result, v)
+		}
+	}
+	return result
+}
+
+func (apiClient ApiClient) GetFindings(projectId string, severityFilter string) (result []Finding, err error) {
+	g := Gate{minimalSeverity: severityFilter}
 	client := apiClient.getHttpClient()
 	req, err := http.NewRequest(http.MethodGet, apiClient.ApiUrl+PROJECT_FINDINGS_URL+"/"+projectId, nil)
 	req.Header.Add("X-API-Key", apiClient.ApiKey)
@@ -169,7 +217,7 @@ func (apiClient ApiClient) GetFindings(projectId string) (result []Finding, err 
 	defer resp.Body.Close()
 	checkError(apiClient.checkRespStatusCode(resp.StatusCode))
 	err = json.NewDecoder(resp.Body).Decode(&result)
-
+	result = Filter(result, g)
 	if err != nil {
 		return
 	}
