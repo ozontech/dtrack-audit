@@ -17,13 +17,15 @@ $ dtrack-audit -h
 Send SBOM file to Dependency Track.
 
 Usage of program:
+  -g string
+        With Sync mode enabled show result and fail an audit if the results include a vulnerability with a severity of specified level or higher. Severity levels are: critical, high, medium, low, info, unassigned (default "unassigned")
   -i string
         Target SBOM file (default "bom.xml")
   -k string
         API Key (Required) (default is environment variable $DTRACK_API_KEY)
   -p string
         Project ID (Required) (default is environment variable $DTRACK_PROJECT_ID)
-  -s    Sync mode enabled (Upload SBOM file and wait for scan result)
+  -s    Sync mode enabled. It is meaning: upload SBOM file, wait for scan result, show it and exit with non-zero code
   -t int
         Max timeout in second for polling API for project findings (default 25)
   -u string
@@ -34,7 +36,7 @@ Usage of program:
 
 ```bash
 $ cyclonedx-bom -o bom.xml
-$ dtrack-audit -s
+$ dtrack-audit -s -g high
 
 2019/10/14 13:04:34 SBOM file is successfully uploaded to DTrack API. Result token is 12345f5e-4ccb-45fe-b8fd-1234a8bf0081
 
