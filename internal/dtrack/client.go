@@ -182,8 +182,9 @@ func (g Gate) Evaluate(f Finding) bool {
 
 	minimalLevel, ok := severityLevels[strings.ToUpper(g.minimalSeverity)]
 
+	// If no minimalLevel is specified then no filtering
 	if ok == false {
-		return false
+		return true
 	}
 
 	if sLevel <= minimalLevel {
