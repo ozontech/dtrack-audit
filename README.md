@@ -14,22 +14,24 @@ go get github.com/ozonru/dtrack-audit/cmd/dtrack-audit
 ```bash
 $ dtrack-audit -h
 
-Send SBOM file to Dependency Track.
+Send SBOM file to Dependency Track for audit.
 
 Usage of program:
   -g string
-        With Sync mode enabled show result and fail an audit if the results include a vulnerability with a severity of specified level or higher. Severity levels are: critical, high, medium, low, info, unassigned (default "unassigned")
+        With Sync mode enabled show result and fail an audit if the results include a vulnerability with a severity of specified level or higher. Severity levels are: critical, high, medium, low, info, unassigned. Environment variable is DTRACK_SEVERITY_FILTER
   -i string
-        Target SBOM file (default "bom.xml")
+        Target SBOM file* (default "bom.xml")
   -k string
-        API Key (Required) (default is environment variable $DTRACK_API_KEY)
+        API Key*. Environment variable is DTRACK_API_KEY
   -p string
-        Project ID (Required) (default is environment variable $DTRACK_PROJECT_ID)
+        Project ID*. Environment variable is DTRACK_PROJECT_ID
   -s    Sync mode enabled. It is meaning: upload SBOM file, wait for scan result, show it and exit with non-zero code
   -t int
         Max timeout in second for polling API for project findings (default 25)
   -u string
-        API URL (Required) (default is environment variable $DTRACK_API_URL)
+        API URL*. Environment variable is DTRACK_API_URL
+
+Fields marked with (*) are required.
 ```
 
 ### Sample output
@@ -38,7 +40,7 @@ Usage of program:
 $ cyclonedx-bom -o bom.xml
 $ dtrack-audit -s -g high
 
-2019/10/14 13:04:34 SBOM file is successfully uploaded to DTrack API. Result token is 12345f5e-4ccb-45fe-b8fd-1234a8bf0081
+SBOM file is successfully uploaded to DTrack API. Result token is 12345f5e-4ccb-45fe-b8fd-1234a8bf0081
 
 2 vulnerabilities found!
 
