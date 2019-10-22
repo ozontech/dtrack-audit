@@ -25,7 +25,7 @@ Usage of program:
         API Key*. Environment variable is DTRACK_API_KEY
   -p string
         Project ID*. Environment variable is DTRACK_PROJECT_ID
-  -s    Sync mode enabled. It is meaning: upload SBOM file, wait for scan result, show it and exit with non-zero code
+  -s    Sync mode enabled. That means: upload SBOM file, wait for scan result, show it and exit with non-zero code
   -t int
         Max timeout in second for polling API for project findings (default 25)
   -u string

@@ -33,7 +33,7 @@ func main() {
 	flag.StringVar(&apiKey, "k", os.Getenv("DTRACK_API_KEY"), "API Key*. Environment variable is DTRACK_API_KEY")
 	flag.StringVar(&apiUrl, "u", os.Getenv("DTRACK_API_URL"), "API URL*. Environment variable is DTRACK_API_URL")
 	flag.StringVar(&severityFilter, "g", os.Getenv("DTRACK_SEVERITY_FILTER"), "With Sync mode enabled show result and fail an audit if the results include a vulnerability with a severity of specified level or higher. Severity levels are: critical, high, medium, low, info, unassigned. Environment variable is DTRACK_SEVERITY_FILTER")
-	flag.BoolVar(&syncMode, "s", false, "Sync mode enabled. It is meaning: upload SBOM file, wait for scan result, show it and exit with non-zero code")
+	flag.BoolVar(&syncMode, "s", false, "Sync mode enabled. That means: upload SBOM file, wait for scan result, show it and exit with non-zero code")
 	flag.IntVar(&timeout, "t", 25, "Max timeout in second for polling API for project findings")
 	flag.Parse()
 
