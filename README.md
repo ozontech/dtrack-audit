@@ -11,7 +11,7 @@ go get github.com/ozonru/dtrack-audit/cmd/dtrack-audit
 
 ## Usage
 
-```bash
+```
 $ dtrack-audit -h
 
 Send SBOM file to Dependency Track for audit.
