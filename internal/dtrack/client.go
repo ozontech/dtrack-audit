@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 )
@@ -15,6 +16,8 @@ import (
 const (
 	BOM_UPLOAD_URL       = "/api/v1/bom"
 	PROJECT_FINDINGS_URL = "/api/v1/finding/project"
+	PROJECT_LOOKUP_URL   = "/api/v1/project/lookup"
+	PROJECT_CREATE_URL   = "/api/v1/project"
 	BOM_TOKEN_URL        = "/api/v1/bom/token"
 	API_POLLING_STEP     = 5 * time.Second
 )
@@ -246,6 +249,88 @@ func (apiClient ApiClient) PollTokenBeingProcessed(token string, timeout <-chan 
 }
 
 func (c ApiClient) GetVulnViewUrl(v Vulnerability) string {
-	// TODO use url builder
-	return c.ApiUrl + "/vulnerability/?source=" + v.Source + "&vulnId=" + v.VulnId
+	uv := url.Values{}
+	uv.Set("source", v.Source)
+	uv.Set("vulnId", v.VulnId)
+	return c.ApiUrl + "/vulnerability?" + uv.Encode()
+}
+
+type Project struct {
+	Uuid        string `json:"uuid"`
+	Name        string `json:"name"`
+	Version     string `json:"version"`
+	Description string `json:"description"`
+}
+
+func (apiClient ApiClient) LookupOrCreateProject(projectName, projectVersion string) (projectId string, err error) {
+	client := apiClient.getHttpClient()
+	result := Project{}
+	v := url.Values{}
+	v.Set("name", projectName)
+	if projectVersion != "" {
+		v.Set("version", projectVersion)
+	}
+	req, err := http.NewRequest(http.MethodGet, apiClient.ApiUrl+PROJECT_LOOKUP_URL+"?"+v.Encode(), nil)
+	req.Header.Add("X-API-Key", apiClient.ApiKey)
+	req.Header.Add("Content-Type", "application/json")
+	resp, err := client.Do(req)
+
+	if err != nil {
+		return
+	}
+
+	defer resp.Body.Close()
+	err = apiClient.checkRespStatusCode(resp.StatusCode)
+
+	if resp.StatusCode == 404 {
+		return apiClient.createProject(projectName, projectVersion)
+	}
+
+	if err != nil {
+		return
+	}
+	err = json.NewDecoder(resp.Body).Decode(&result)
+
+	if err != nil {
+		return
+	}
+	return result.Uuid, nil
+}
+
+func (apiClient ApiClient) createProject(projectName, projectVersion string) (projectId string, err error) {
+	client := apiClient.getHttpClient()
+	p := Project{Name: projectName, Version: projectVersion}
+	result := Project{}
+	payloadJson, err := json.Marshal(p)
+
+	if err != nil {
+		return
+	}
+
+	req, err := http.NewRequest(http.MethodPut, apiClient.ApiUrl+PROJECT_CREATE_URL, bytes.NewBuffer(payloadJson))
+	req.Header.Add("X-API-Key", apiClient.ApiKey)
+	req.Header.Add("Content-Type", "application/json")
+	resp, err := client.Do(req)
+
+	if err != nil {
+		return
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode == 201 {
+		err = json.NewDecoder(resp.Body).Decode(&result)
+		if err != nil {
+			return
+		}
+		return result.Uuid, nil
+	}
+
+	err = apiClient.checkRespStatusCode(resp.StatusCode)
+
+	if err != nil {
+		return
+	}
+
+	return
 }
