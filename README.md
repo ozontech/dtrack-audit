@@ -1,5 +1,5 @@
 # dtrack-audit
-[OWASP Dependency Track](https://dependencytrack.org) API client. See [Dependency-Track docs: Continuous Integration & Delivery](https://docs.dependencytrack.org/usage/cicd/) for use case.
+[OWASP Dependency Track](https://dependencytrack.org) API client for your security CI/CD pipeline. See [Dependency-Track docs: Continuous Integration & Delivery](https://docs.dependencytrack.org/usage/cicd/) for use case.
 
 ## Install
 
@@ -9,30 +9,12 @@
 go get github.com/ozonru/dtrack-audit/cmd/dtrack-audit
 ```
 
-## Usage
+## Features
 
-```
-$ dtrack-audit -h
-
-Send SBOM file to Dependency Track for audit.
-
-Usage of program:
-  -g string
-        With Sync mode enabled show result and fail an audit if the results include a vulnerability with a severity of specified level or higher. Severity levels are: critical, high, medium, low, info, unassigned. Environment variable is DTRACK_SEVERITY_FILTER
-  -i string
-        Target SBOM file* (default "bom.xml")
-  -k string
-        API Key*. Environment variable is DTRACK_API_KEY
-  -p string
-        Project ID*. Environment variable is DTRACK_PROJECT_ID
-  -s    Sync mode enabled. That means: upload SBOM file, wait for scan result, show it and exit with non-zero code
-  -t int
-        Max timeout in second for polling API for project findings (default 25)
-  -u string
-        API URL*. Environment variable is DTRACK_API_URL
-
-Fields marked with (*) are required.
-```
+* Fully configurable via environment variables
+* Async and sync modes. In async mode dtrack-audit simply sends SBOM file to DTrack API (like cURL but *in much more comfortable way*). Sync mode means: upload SBOM file, wait for the scan result, show it and exit with non-zero code. So you can break corresponding CI/CD job to make developers pay attention to findings
+* You can filter the results. With Sync mode enabled show result and fail an audit **if the results include a vulnerability with a severity of specified level or higher**. Severity levels are: critical, high, medium, low, info, unassigned
+* Auto creation of projects. With this feautre you can configure SCA (with dtrack-audit) step globally for your CI/CD and it will create project, e.g. with name from environment variable like `$CI_PROJECT_NAME`. So you don't need to configure it manually for each project
 
 ### Sample output
 
