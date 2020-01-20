@@ -72,7 +72,12 @@ func (apiClient ApiClient) Upload(inputFileName, projectId string) (uploadResult
 	}
 
 	defer resp.Body.Close()
-	checkError(apiClient.checkRespStatusCode(resp.StatusCode))
+
+	err = apiClient.checkRespStatusCode(resp.StatusCode)
+
+	if err != nil {
+		return
+	}
 
 	err = json.NewDecoder(resp.Body).Decode(&uploadResult)
 
@@ -85,8 +90,9 @@ func (apiClient ApiClient) Upload(inputFileName, projectId string) (uploadResult
 
 func (apiClient ApiClient) checkRespStatusCode(statusCode int) error {
 	errorStatusCodes := map[int]string{
-		404: "The project could not be found or invalid API URL",
-		401: "Authorization error",
+		404: "The project could not be found or invalid API URL.",
+		401: "Authentication/Authorization error.",
+		403: "Permission error. Check that you have all required permissions.",
 	}
 
 	if errorMsg, ok := errorStatusCodes[statusCode]; ok {
