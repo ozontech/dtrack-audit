@@ -15,6 +15,7 @@ go get github.com/ozonru/dtrack-audit/cmd/dtrack-audit
 * Async and sync modes. In async mode dtrack-audit simply sends SBOM file to DTrack API (like cURL but *in much more comfortable way*). Sync mode means: upload SBOM file, wait for the scan result, show it and exit with non-zero code. So you can break corresponding CI/CD job to make developers pay attention to findings
 * You can filter the results. With Sync mode enabled show result and fail an audit **if the results include a vulnerability with a severity of specified level or higher**. Severity levels are: critical, high, medium, low, info, unassigned
 * Auto creation of projects. With this feautre you can configure SCA (with dtrack-audit) step globally for your CI/CD and it will create project, e.g. with name from environment variable like `$CI_PROJECT_NAME`. So you don't need to configure it manually for each project
+* Support for TeamCity CI output. You can use `-T` flag to enable JSON output. After that, activate the [Golang build feature](https://www.jetbrains.com/help/teamcity/golang.html).
 
 ### Sample output
 
