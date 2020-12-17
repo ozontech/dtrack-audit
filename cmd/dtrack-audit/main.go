@@ -19,8 +19,8 @@ type TeamCityMsg struct {
 	Output  string
 }
 
-var packageName = "github.com/ozonru/dtrack-audit/cmd/dtrack-audit"
-var testName = "TestVulnerabilities"
+const TeamCityPackageName = "github.com/ozonru/dtrack-audit/cmd/dtrack-audit"
+const TeamCityTestName = "TestVulnerabilities"
 
 func checkError(e error) {
 	if e != nil {
@@ -28,8 +28,14 @@ func checkError(e error) {
 	}
 }
 
+func formatFinding(f dtrack.Finding, apiClient dtrack.ApiClient) string {
+	return fmt.Sprintf(
+		" > %s: %s\n   Component: %s %s\n   More info: %s\n\n",
+		f.Vuln.Severity, f.Vuln.Title, f.Comp.Name, f.Comp.Version, apiClient.GetVulnViewUrl(f.Vuln))
+}
+
 func printTeamCityMsg(action, output string) {
-	msg := TeamCityMsg{time.Now(), action, packageName, testName, output}
+	msg := TeamCityMsg{time.Now(), action, TeamCityPackageName, TeamCityTestName, output}
 	jsonData, err := json.Marshal(msg)
 	checkError(err)
 	fmt.Println(string(jsonData))
@@ -107,21 +113,12 @@ func main() {
 		findings, err := apiClient.GetFindings(projectId, severityFilter)
 		checkError(err)
 		if len(findings) > 0 {
-			var vulnMsg []string
 			fmt.Printf("%d vulnerabilities found!\n\n", len(findings))
 			for _, f := range findings {
-				vulnMsg = append(
-					vulnMsg,
-					fmt.Sprintf(" > %s: %s\n", f.Vuln.Severity, f.Vuln.Title),
-					fmt.Sprintf("   Component: %s %s\n", f.Comp.Name, f.Comp.Version),
-					fmt.Sprintf("   More info: %s\n\n", apiClient.GetVulnViewUrl(f.Vuln)),
-				)
-			}
-			for _, msg := range vulnMsg {
 				if useTeamCityOutput {
-					printTeamCityMsg("output", msg)
+					printTeamCityMsg("output", formatFinding(f, apiClient))
 				} else {
-					fmt.Print(msg)
+					fmt.Print(formatFinding(f, apiClient))
 				}
 			}
 			if useTeamCityOutput {
