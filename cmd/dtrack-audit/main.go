@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"github.com/ozonru/dtrack-audit/internal/dtrack"
@@ -10,15 +11,39 @@ import (
 	"time"
 )
 
+type TeamCityMsg struct {
+	Time    time.Time
+	Action  string
+	Package string
+	Test    string
+	Output  string
+}
+
+const TeamCityPackageName = "github.com/ozonru/dtrack-audit/cmd/dtrack-audit"
+const TeamCityTestName = "TestVulnerabilities"
+
 func checkError(e error) {
 	if e != nil {
 		log.Fatal(e)
 	}
 }
 
+func formatFinding(f dtrack.Finding, apiClient dtrack.ApiClient) string {
+	return fmt.Sprintf(
+		" > %s: %s\n   Component: %s %s\n   More info: %s\n\n",
+		f.Vuln.Severity, f.Vuln.Title, f.Comp.Name, f.Comp.Version, apiClient.GetVulnViewUrl(f.Vuln))
+}
+
+func printTeamCityMsg(action, output string) {
+	msg := TeamCityMsg{time.Now(), action, TeamCityPackageName, TeamCityTestName, output}
+	jsonData, err := json.Marshal(msg)
+	checkError(err)
+	fmt.Println(string(jsonData))
+}
+
 func main() {
 	var inputFileName, projectId, apiKey, apiUrl, severityFilter, projectName, projectVersion string
-	var syncMode, autoCreateProject bool
+	var syncMode, autoCreateProject, useTeamCityOutput bool
 	var uploadResult dtrack.UploadResult
 	var timeout int
 
@@ -36,6 +61,7 @@ func main() {
 	}
 
 	autoCreateProject, err = strconv.ParseBool(os.Getenv("DTRACK_AUTO_CREATE_PROJECT"))
+	useTeamCityOutput, err = strconv.ParseBool(os.Getenv("DTRACK_TEAMCITY_OUTPUT"))
 
 	if err != nil {
 		autoCreateProject = false
@@ -50,6 +76,7 @@ func main() {
 	flag.StringVar(&severityFilter, "g", os.Getenv("DTRACK_SEVERITY_FILTER"), "With Sync mode enabled show result and fail an audit if the results include a vulnerability with a severity of specified level or higher. Severity levels are: critical, high, medium, low, info, unassigned. Environment variable is DTRACK_SEVERITY_FILTER")
 	flag.BoolVar(&syncMode, "s", syncMode, "Sync mode enabled. That means: upload SBOM file, wait for scan result, show it and exit with non-zero code. Environment variable is DTRACK_SYNC_MODE")
 	flag.BoolVar(&autoCreateProject, "a", autoCreateProject, "Auto create project with projectName if it does not exist. Environment variable is DTRACK_AUTO_CREATE_PROJECT")
+	flag.BoolVar(&useTeamCityOutput, "T", useTeamCityOutput, "Use TeamCity output. Environment variable is DTRACK_TEAMCITY_OUTPUT")
 	flag.IntVar(&timeout, "t", 25, "Max timeout in second for polling API for project findings")
 	flag.Parse()
 
@@ -78,6 +105,9 @@ func main() {
 	}
 
 	if uploadResult.Token != "" && syncMode {
+		if useTeamCityOutput {
+			printTeamCityMsg("run", "")
+		}
 		err := apiClient.PollTokenBeingProcessed(uploadResult.Token, time.After(time.Duration(timeout)*time.Second))
 		checkError(err)
 		findings, err := apiClient.GetFindings(projectId, severityFilter)
@@ -85,11 +115,20 @@ func main() {
 		if len(findings) > 0 {
 			fmt.Printf("%d vulnerabilities found!\n\n", len(findings))
 			for _, f := range findings {
-				fmt.Printf(" > %s: %s\n", f.Vuln.Severity, f.Vuln.Title)
-				fmt.Printf("   Component: %s %s\n", f.Comp.Name, f.Comp.Version)
-				fmt.Printf("   More info: %s\n\n", apiClient.GetVulnViewUrl(f.Vuln))
+				if useTeamCityOutput {
+					printTeamCityMsg("output", formatFinding(f, apiClient))
+				} else {
+					fmt.Print(formatFinding(f, apiClient))
+				}
+			}
+			if useTeamCityOutput {
+				printTeamCityMsg("fail", "")
 			}
 			os.Exit(1)
 		}
+		if useTeamCityOutput {
+			printTeamCityMsg("pass", "")
+		}
 	}
 }
+
