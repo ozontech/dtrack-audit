@@ -1,10 +1,10 @@
 package main
 
 import (
-	"../../internal/dtrack"
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/agentram/dtrack-audit/internal/dtrack"
 	"log"
 	"os"
 	"time"

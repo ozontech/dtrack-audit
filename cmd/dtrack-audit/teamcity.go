@@ -1,10 +1,10 @@
 package main
 
 import (
-	"../../internal/dtrack"
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	"github.com/agentram/dtrack-audit/internal/dtrack"
 	"io/ioutil"
 	"os"
 	"time"
