@@ -1,10 +1,10 @@
 package main
 
 import (
+	"../../internal/dtrack"
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/agentram/dtrack-audit/internal/dtrack"
 	"log"
 	"os"
 	"time"
@@ -19,7 +19,7 @@ func checkError(e error) {
 func formatFinding(f dtrack.Finding, apiClient dtrack.ApiClient) string {
 	return fmt.Sprintf(
 		" > %s: %s\n   Component: %s %s\n   More info: %s\n\n",
-		f.Vuln.Severity, f.Vuln.Title, f.Comp.Name, f.Comp.Version, apiClient.GetVulnViewUrl(f.Vuln))
+		f.Vuln.Severity, f.Vuln.VulnId, f.Comp.Name, f.Comp.Version, apiClient.GetVulnViewUrl(f.Vuln))
 }
 
 func findVulnerabilities(apiClient dtrack.ApiClient, config *Config) (int, []dtrack.Finding, error) {

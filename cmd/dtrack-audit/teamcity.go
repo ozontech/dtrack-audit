@@ -1,10 +1,10 @@
 package main
 
 import (
+	"../../internal/dtrack"
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
-	"github.com/agentram/dtrack-audit/internal/dtrack"
 	"io/ioutil"
 	"os"
 	"time"
@@ -82,12 +82,13 @@ func findAndPrintForTeamCity(apiClient dtrack.ApiClient, config *Config) (int, [
 	for _, b := range bom {
 		libs := b.Components.Component
 		for i := range libs {
-			printTeamCityMsg("run", "", libs[i].Name)
+			lib := libs[i].Name + "@" + libs[i].Version
+			printTeamCityMsg("run", "", lib)
 			if libs[i].HasVulnerabilities {
-				printTeamCityMsg("output", libs[i].VulnerabilitiesDiscr, libs[i].Name)
-				printTeamCityMsg("fail", "", libs[i].Name)
+				printTeamCityMsg("output", libs[i].VulnerabilitiesDiscr, lib)
+				printTeamCityMsg("fail", "", lib)
 			} else {
-				printTeamCityMsg("pass", "", libs[i].Name)
+				printTeamCityMsg("pass", "", lib)
 			}
 		}
 	}
