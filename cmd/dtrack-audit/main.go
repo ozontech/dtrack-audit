@@ -4,7 +4,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/ozonru/dtrack-audit/internal/dtrack"
+	"github.com/agentram/dtrack-audit/internal/dtrack"
 	"log"
 	"os"
 	"time"
