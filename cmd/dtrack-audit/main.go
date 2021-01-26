@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"flag"
 	"fmt"
 	"github.com/agentram/dtrack-audit/internal/dtrack"
 	"log"
@@ -27,13 +26,14 @@ func findVulnerabilities(apiClient dtrack.ApiClient, config *Config) (int, []dtr
 	checkError(err)
 	if uploadResult.Token != "" {
 		fmt.Printf("SBOM file is successfully uploaded to DTrack API. Result token is %s\n", uploadResult.Token)
-		err := apiClient.PollTokenBeingProcessed(uploadResult.Token, time.After(time.Duration(config.timeout)*time.Second))
+		err := apiClient.PollTokenBeingProcessed(
+			uploadResult.Token, time.After(time.Duration(config.timeout)*time.Second))
 		checkError(err)
 		findings, err := apiClient.GetFindings(config.projectId, config.severityFilter)
 		checkError(err)
 		return len(findings), findings, err
 	}
-	return 0, nil, errors.New("token not found")
+	return 0, nil, errors.New("token was not received")
 }
 
 func findAndPrintForUser(apiClient dtrack.ApiClient, config *Config) (int, []dtrack.Finding) {
@@ -50,19 +50,15 @@ func findAndPrintForUser(apiClient dtrack.ApiClient, config *Config) (int, []dtr
 
 func main() {
 	var err error
+
 	config := new(Config)
-	parseFlagsAndEnvs(config)
+	ParseFlagsAndEnvs(config)
 
 	apiClient := dtrack.ApiClient{ApiKey: config.apiKey, ApiUrl: config.apiUrl}
 
 	if config.autoCreateProject && config.projectId == "" {
 		config.projectId, err = apiClient.LookupOrCreateProject(config.projectName, config.projectVersion)
 		checkError(err)
-	}
-
-	if config.projectId == "" {
-		flag.Usage()
-		os.Exit(1)
 	}
 
 	if config.syncMode {

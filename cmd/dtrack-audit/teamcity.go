@@ -60,12 +60,12 @@ func printTeamCityMsg(action, output, testName string) {
 
 func populateBomWithFindings(bom []Bom, findings []dtrack.Finding, apiClient dtrack.ApiClient) []Bom {
 	for _, finding := range findings {
-		for _, v := range bom {
-			lib := v.Components.Component
-			for i := range lib {
-				if lib[i].Name == finding.Comp.Name && lib[i].Version == finding.Comp.Version {
-					lib[i].HasVulnerabilities = true
-					lib[i].VulnerabilitiesDiscr += formatFinding(finding, apiClient)
+		for _, b := range bom {
+			libs := b.Components.Component
+			for i := range libs {
+				if libs[i].Name == finding.Comp.Name && libs[i].Version == finding.Comp.Version {
+					libs[i].HasVulnerabilities = true
+					libs[i].VulnerabilitiesDiscr += formatFinding(finding, apiClient)
 					break
 				}
 			}
