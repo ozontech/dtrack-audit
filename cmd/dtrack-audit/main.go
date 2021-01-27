@@ -6,6 +6,7 @@ import (
 	"github.com/agentram/dtrack-audit/internal/dtrack"
 	"log"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -15,10 +16,14 @@ func checkError(e error) {
 	}
 }
 
-func formatFinding(f dtrack.Finding, apiClient dtrack.ApiClient) string {
-	return fmt.Sprintf(
-		" > %s: %s\n   Component: %s %s\n   More info: %s\n\n",
-		f.Vuln.Severity, f.Vuln.VulnId, f.Comp.Name, f.Comp.Version, apiClient.GetVulnViewUrl(f.Vuln))
+func formatFinding(findings []dtrack.Finding, apiClient dtrack.ApiClient) string {
+	var finalString []string
+	for _, f := range findings {
+		finalString = append(finalString, fmt.Sprintf(
+			" > %s: %s\n   Component: %s %s\n   More info: %s\n\n",
+			f.Vuln.Severity, f.Vuln.VulnId, f.Comp.Name, f.Comp.Version, apiClient.GetVulnViewUrl(f.Vuln)))
+	}
+	return strings.Join(finalString[:], "")
 }
 
 func findVulnerabilities(apiClient dtrack.ApiClient, config *Config) (int, []dtrack.Finding, error) {
@@ -41,9 +46,7 @@ func findAndPrintForUser(apiClient dtrack.ApiClient, config *Config) (int, []dtr
 	checkError(err)
 	if vulnerabilitiesCount > 0 {
 		fmt.Printf("%d vulnerabilities found!\n\n", vulnerabilitiesCount)
-		for _, f := range findings {
-			fmt.Print(formatFinding(f, apiClient))
-		}
+		fmt.Print(formatFinding(findings, apiClient))
 	}
 	return vulnerabilitiesCount, findings
 }

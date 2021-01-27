@@ -7,6 +7,7 @@ import (
 	"github.com/agentram/dtrack-audit/internal/dtrack"
 	"io/ioutil"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -21,13 +22,12 @@ type Bom struct {
 	Components   struct {
 		Text      string `xml:",chardata"`
 		Component []struct {
-			Text                 string `xml:",chardata"`
-			Type                 string `xml:"type,attr"`
-			Name                 string `xml:"name"`
-			Version              string `xml:"version"`
-			Purl                 string `xml:"purl"`
-			HasVulnerabilities   bool
-			VulnerabilitiesDiscr string
+			Text            string `xml:",chardata"`
+			Type            string `xml:"type,attr"`
+			Name            string `xml:"name"`
+			Version         string `xml:"version"`
+			Purl            string `xml:"purl"`
+			Vulnerabilities []dtrack.Finding
 		} `xml:"component"`
 	} `xml:"components"`
 }
@@ -40,15 +40,24 @@ type TeamCityMsg struct {
 	Output  string
 }
 
-func unmarshalXML(filePath string) []Bom {
-	result := make([]Bom, 0)
+func (bom Bom) getByNameAndVersion(name, version string) int {
+	for i, component := range bom.Components.Component {
+		if strings.EqualFold(component.Name, name) && strings.EqualFold(component.Version, version) {
+			return i
+		}
+	}
+	return -1
+}
+
+func unmarshalXML(filePath string) *Bom {
+	var bom Bom
 	xmlFile, err := os.Open(filePath)
 	checkError(err)
 	defer xmlFile.Close()
 	byteValue, _ := ioutil.ReadAll(xmlFile)
-	err = xml.Unmarshal(byteValue, &result)
+	err = xml.Unmarshal(byteValue, &bom)
 	checkError(err)
-	return result
+	return &bom
 }
 
 func printTeamCityMsg(action, output, testName string) {
@@ -58,17 +67,12 @@ func printTeamCityMsg(action, output, testName string) {
 	fmt.Println(string(jsonData))
 }
 
-func populateBomWithFindings(bom []Bom, findings []dtrack.Finding, apiClient dtrack.ApiClient) []Bom {
+func populateBomWithFindings(bom *Bom, findings []dtrack.Finding) *Bom {
 	for _, finding := range findings {
-		for _, b := range bom {
-			libs := b.Components.Component
-			for i := range libs {
-				if libs[i].Name == finding.Comp.Name && libs[i].Version == finding.Comp.Version {
-					libs[i].HasVulnerabilities = true
-					libs[i].VulnerabilitiesDiscr += formatFinding(finding, apiClient)
-					break
-				}
-			}
+		i := bom.getByNameAndVersion(finding.Comp.Name, finding.Comp.Version)
+		if i > 0 {
+			component := &bom.Components.Component[i]
+			component.Vulnerabilities = append(component.Vulnerabilities, finding)
 		}
 	}
 	return bom
@@ -78,18 +82,15 @@ func findAndPrintForTeamCity(apiClient dtrack.ApiClient, config *Config) (int, [
 	bom := unmarshalXML(config.inputFileName)
 	vulnerabilitiesCount, findings, err := findVulnerabilities(apiClient, config)
 	checkError(err)
-	bom = populateBomWithFindings(bom, findings, apiClient)
-	for _, b := range bom {
-		libs := b.Components.Component
-		for i := range libs {
-			lib := libs[i].Name + "@" + libs[i].Version
-			printTeamCityMsg("run", "", lib)
-			if libs[i].HasVulnerabilities {
-				printTeamCityMsg("output", libs[i].VulnerabilitiesDiscr, lib)
-				printTeamCityMsg("fail", "", lib)
-			} else {
-				printTeamCityMsg("pass", "", lib)
-			}
+	bom = populateBomWithFindings(bom, findings)
+	for _, component := range bom.Components.Component {
+		lib := component.Name + "@" + component.Version
+		printTeamCityMsg("run", "", lib)
+		if len(component.Vulnerabilities) > 0 {
+			printTeamCityMsg("output", formatFinding(component.Vulnerabilities, apiClient), lib)
+			printTeamCityMsg("fail", "", lib)
+		} else {
+			printTeamCityMsg("pass", "", lib)
 		}
 	}
 	return vulnerabilitiesCount, findings
