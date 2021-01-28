@@ -26,7 +26,7 @@ func formatFinding(findings []dtrack.Finding, apiClient dtrack.ApiClient) string
 	return strings.Join(finalString[:], "")
 }
 
-func findVulnerabilities(apiClient dtrack.ApiClient, config *Config) (int, []dtrack.Finding, error) {
+func findVulnerabilities(apiClient dtrack.ApiClient, config *Config) ([]dtrack.Finding, error) {
 	uploadResult, err := apiClient.Upload(config.inputFileName, config.projectId)
 	checkError(err)
 	if uploadResult.Token != "" {
@@ -36,19 +36,19 @@ func findVulnerabilities(apiClient dtrack.ApiClient, config *Config) (int, []dtr
 		checkError(err)
 		findings, err := apiClient.GetFindings(config.projectId, config.severityFilter)
 		checkError(err)
-		return len(findings), findings, err
+		return findings, err
 	}
-	return 0, nil, errors.New("token was not received")
+	return nil, errors.New("token was not received")
 }
 
-func findAndPrintForUser(apiClient dtrack.ApiClient, config *Config) (int, []dtrack.Finding) {
-	vulnerabilitiesCount, findings, err := findVulnerabilities(apiClient, config)
+func PrintForUser(apiClient dtrack.ApiClient, config *Config) {
+	findings, err := findVulnerabilities(apiClient, config)
 	checkError(err)
-	if vulnerabilitiesCount > 0 {
-		fmt.Printf("%d vulnerabilities found!\n\n", vulnerabilitiesCount)
+	if len(findings) > 0 {
+		fmt.Printf("%d vulnerabilities found!\n\n", len(findings))
 		fmt.Print(formatFinding(findings, apiClient))
+		os.Exit(1)
 	}
-	return vulnerabilitiesCount, findings
 }
 
 func main() {
@@ -65,14 +65,10 @@ func main() {
 	}
 
 	if config.syncMode {
-		var vulnerabilitiesCount int
 		if config.useTeamCityOutput {
-			vulnerabilitiesCount, _ = findAndPrintForTeamCity(apiClient, config)
+			PrintForTeamCity(apiClient, config)
 		} else {
-			vulnerabilitiesCount, _ = findAndPrintForUser(apiClient, config)
-		}
-		if vulnerabilitiesCount > 0 {
-			os.Exit(1)
+			PrintForUser(apiClient, config)
 		}
 	}
 }
