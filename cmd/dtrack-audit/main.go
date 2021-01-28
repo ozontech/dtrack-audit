@@ -3,7 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/agentram/dtrack-audit/internal/dtrack"
+	"github.com/ozonru/dtrack-audit/internal/dtrack"
 	"log"
 	"os"
 	"strings"

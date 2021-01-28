@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
-	"github.com/agentram/dtrack-audit/internal/dtrack"
+	"github.com/ozonru/dtrack-audit/internal/dtrack"
 	"io/ioutil"
 	"os"
 	"strings"
