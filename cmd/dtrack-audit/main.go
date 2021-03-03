@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/agentram/dtrack-audit/internal/dtrack"
+	"github.com/ozonru/dtrack-audit/internal/dtrack"
 	"log"
 	"os"
 	"time"
@@ -42,46 +42,58 @@ func printTeamCityMsg(action, output string) {
 func main() {
 	var err error
 
-	config := new(Config)
-	ParseFlagsAndEnvs(config)
+	config := &dtrack.Config{}
+	dtrack.ParseFlagsAndEnvs(config)
 
-	apiClient := dtrack.ApiClient{ApiKey: config.apiKey, ApiUrl: config.apiUrl}
+	if config.ApiKey == "" || config.ApiUrl == "" {
+		dtrack.Usage()
+		os.Exit(1)
+	}
 
-	if config.autoCreateProject && config.projectId == "" {
-		config.projectId, err = apiClient.LookupOrCreateProject(config.projectName, config.projectVersion)
+	// We need at least  apiKey and apiUrl to call Dtrack API
+	apiClient := dtrack.ApiClient{ApiKey: config.ApiKey, ApiUrl: config.ApiUrl}
+
+	if config.AutoCreateProject && config.ProjectId == "" {
+		config.ProjectId, err = apiClient.LookupOrCreateProject(config.ProjectName, config.ProjectVersion)
 		checkError(err)
 	}
 
-	uploadResult, err := apiClient.Upload(config.inputFileName, config.projectId)
+	// projectId is also required to call Dtrack API and deal with projects
+	if config.ProjectId == "" {
+		dtrack.Usage()
+		os.Exit(1)
+	}
+
+	uploadResult, err := apiClient.Upload(config.InputFileName, config.ProjectId)
 	checkError(err)
 
 	if uploadResult.Token != "" {
 		fmt.Printf("SBOM file is successfully uploaded to DTrack API. Result token is %s\n", uploadResult.Token)
 	}
 
-	if uploadResult.Token != "" && config.syncMode {
-		if config.useTeamCityOutput {
+	if uploadResult.Token != "" && config.SyncMode {
+		if config.UseTeamCityOutput {
 			printTeamCityMsg("run", "")
 		}
-		err := apiClient.PollTokenBeingProcessed(uploadResult.Token, time.After(time.Duration(config.timeout)*time.Second))
+		err := apiClient.PollTokenBeingProcessed(uploadResult.Token, time.After(time.Duration(config.Timeout)*time.Second))
 		checkError(err)
-		findings, err := apiClient.GetFindings(config.projectId, config.severityFilter)
+		findings, err := apiClient.GetFindings(config.ProjectId, config.SeverityFilter)
 		checkError(err)
 		if len(findings) > 0 {
 			fmt.Printf("%d vulnerabilities found!\n\n", len(findings))
 			for _, f := range findings {
-				if config.useTeamCityOutput {
+				if config.UseTeamCityOutput {
 					printTeamCityMsg("output", formatFinding(f, apiClient))
 				} else {
 					fmt.Print(formatFinding(f, apiClient))
 				}
 			}
-			if config.useTeamCityOutput {
+			if config.UseTeamCityOutput {
 				printTeamCityMsg("fail", "")
 			}
 			os.Exit(1)
 		}
-		if config.useTeamCityOutput {
+		if config.UseTeamCityOutput {
 			printTeamCityMsg("pass", "")
 		}
 	}
