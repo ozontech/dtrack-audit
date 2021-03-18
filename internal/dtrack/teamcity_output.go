@@ -1,10 +1,9 @@
-package main
+package dtrack
 
 import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
-	"github.com/agentram/dtrack-audit/internal/dtrack"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -27,7 +26,7 @@ type Bom struct {
 			Name            string `xml:"name"`
 			Version         string `xml:"version"`
 			Purl            string `xml:"purl"`
-			Vulnerabilities []dtrack.Finding
+			Vulnerabilities []Finding
 		} `xml:"component"`
 	} `xml:"components"`
 }
@@ -65,7 +64,7 @@ func printTeamCityMsg(action, output, testName string) {
 	fmt.Println(string(jsonData))
 }
 
-func populateBomWithFindings(bom *Bom, findings []dtrack.Finding) *Bom {
+func populateBomWithFindings(bom *Bom, findings []Finding) *Bom {
 	for _, finding := range findings {
 		i := bom.getByNameAndVersion(finding.Comp.Name, finding.Comp.Version)
 		if i >= 0 {
@@ -76,8 +75,8 @@ func populateBomWithFindings(bom *Bom, findings []dtrack.Finding) *Bom {
 	return bom
 }
 
-func PrintForTeamCity(apiClient dtrack.ApiClient, config *Config) {
-	bom := unmarshalXML(config.inputFileName)
+func PrintForTeamCity(apiClient ApiClient, config *Config) {
+	bom := unmarshalXML(config.InputFileName)
 	findings, err := findVulnerabilities(apiClient, config)
 	checkError(err)
 	bom = populateBomWithFindings(bom, findings)
