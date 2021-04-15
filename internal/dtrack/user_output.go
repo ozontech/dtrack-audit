@@ -3,7 +3,6 @@ package dtrack
 import (
 	"fmt"
 	"net/url"
-	"os"
 	"strings"
 )
 
@@ -19,7 +18,7 @@ func formatFinding(findings []Finding, config *Config) string {
 	for _, f := range findings {
 		finalString = append(finalString, fmt.Sprintf(
 			" > %s: %s\n   Component: %s %s\n   More info: %s\n\n",
-			f.Vuln.Severity, f.Vuln.VulnId, f.Comp.Name, f.Comp.Version, getVulnViewUrl(f.Vuln, config)))
+			f.Vuln.Severity, f.Vuln.Title, f.Comp.Name, f.Comp.Version, getVulnViewUrl(f.Vuln, config)))
 	}
 	return strings.Join(finalString[:], "")
 }
@@ -28,6 +27,5 @@ func PrintForUser(findings []Finding, config *Config) {
 	if len(findings) > 0 {
 		fmt.Printf("%d vulnerabilities found!\n\n", len(findings))
 		fmt.Print(formatFinding(findings, config))
-		os.Exit(1)
 	}
 }

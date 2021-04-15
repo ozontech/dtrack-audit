@@ -99,6 +99,7 @@ func ParseFlagsAndEnvs(config *Config) {
 		getEnvBool("DTRACK_AUTO_CREATE_PROJECT"),
 		"Auto create project with projectName if it does not exist. Environment variable "+
 			"is DTRACK_AUTO_CREATE_PROJECT")
+	// TODO could be a problem with misprinting t and T
 	flag.BoolVar(
 		&config.UseTeamCityOutput,
 		"T",

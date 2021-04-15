@@ -5,7 +5,6 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"strings"
 	"time"
 )
@@ -87,8 +86,5 @@ func PrintForTeamCity(findings []Finding, config *Config) {
 		} else {
 			printTeamCityMsg("pass", "", lib)
 		}
-	}
-	if len(findings) > 0 {
-		os.Exit(1)
 	}
 }
