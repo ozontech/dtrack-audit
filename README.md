@@ -5,6 +5,12 @@
 
 ### Local Installation
 
+*Go 1.16+*
+```bash
+go install github.com/ozonru/dtrack-audit/cmd/dtrack-audit@latest
+```
+
+*Go version < 1.16*
 ```bash
 go get github.com/ozonru/dtrack-audit/cmd/dtrack-audit
 ```
