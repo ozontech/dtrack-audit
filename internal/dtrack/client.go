@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
+	"os"
 	"net/url"
 	"strings"
 	"time"
@@ -24,7 +24,8 @@ const (
 
 func checkError(e error) {
 	if e != nil {
-		log.Fatal(e)
+		fmt.Printf("[Dtrack API Client Error]: %s\n", e)
+		os.Exit(0)
 	}
 }
 
@@ -252,13 +253,6 @@ func (apiClient ApiClient) PollTokenBeingProcessed(token string, timeout <-chan 
 		}
 	}
 	return nil
-}
-
-func (c ApiClient) GetVulnViewUrl(v Vulnerability) string {
-	uv := url.Values{}
-	uv.Set("source", v.Source)
-	uv.Set("vulnId", v.VulnId)
-	return c.ApiUrl + "/vulnerability?" + uv.Encode()
 }
 
 type Project struct {
