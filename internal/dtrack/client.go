@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
+	"os"
 	"net/url"
 	"strings"
 	"time"
@@ -24,7 +24,8 @@ const (
 
 func checkError(e error) {
 	if e != nil {
-		log.Fatal(e)
+		fmt.Printf("[Dtrack API Client Error]: %s\n", e)
+		os.Exit(0)
 	}
 }
 

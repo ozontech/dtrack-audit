@@ -3,14 +3,14 @@ package main
 import (
 	"fmt"
 	"github.com/ozonru/dtrack-audit/internal/dtrack"
-	"log"
 	"os"
 	"time"
 )
 
 func checkError(e error) {
 	if e != nil {
-		log.Fatal(e)
+		fmt.Printf("[Dtrack Audit Error]: %s\n", e)
+		os.Exit(0)
 	}
 }
 
@@ -23,7 +23,7 @@ func main() {
 	// We need at least apiKey and apiUrl to call Dtrack API
 	if config.ApiKey == "" || config.ApiUrl == "" {
 		dtrack.Usage()
-		os.Exit(1)
+		os.Exit(0)
 	}
 
 	apiClient := dtrack.ApiClient{ApiKey: config.ApiKey, ApiUrl: config.ApiUrl}
@@ -37,7 +37,7 @@ func main() {
 	// ProjectId is also required to call Dtrack API and deal with projects
 	if config.ProjectId == "" {
 		dtrack.Usage()
-		os.Exit(1)
+		os.Exit(0)
 	}
 
 	uploadResult, err := apiClient.Upload(config.InputFileName, config.ProjectId)
@@ -49,6 +49,7 @@ func main() {
 
 	// In Sync mode we're waiting for findings from Dtrack
 	if uploadResult.Token != "" && config.SyncMode {
+		fmt.Println("In Sync mode we're waiting for findings from DTrack")
 		err := apiClient.PollTokenBeingProcessed(
 			uploadResult.Token, time.After(time.Duration(config.Timeout)*time.Second))
 		checkError(err)
@@ -62,6 +63,8 @@ func main() {
 			dtrack.PrintForUser(findings, config)
 		}
 		// For CI/CD integration
+		// Break corresponding CI/CD job to make developers 
+		// pay attention to findings
 		if len(findings) > 0 {
 			os.Exit(1)
 		}
