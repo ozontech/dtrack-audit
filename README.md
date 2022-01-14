@@ -7,12 +7,12 @@
 
 *Go 1.16+*
 ```bash
-go install github.com/ozonru/dtrack-audit/cmd/dtrack-audit@latest
+go install github.com/ozontech/dtrack-audit/cmd/dtrack-audit@latest
 ```
 
 *Go version < 1.16*
 ```bash
-go get github.com/ozonru/dtrack-audit/cmd/dtrack-audit
+go get github.com/ozontech/dtrack-audit/cmd/dtrack-audit
 ```
 
 ## Features

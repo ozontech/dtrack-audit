@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-const TeamCityPackageName = "github.com/ozonru/dtrack-audit/cmd/dtrack-audit"
+const TeamCityPackageName = "github.com/ozontech/dtrack-audit/cmd/dtrack-audit"
 
 type Bom struct {
 	XMLName      xml.Name `xml:"bom"`
