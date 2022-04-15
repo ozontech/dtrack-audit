@@ -4,11 +4,12 @@ import (
 	"bytes"
 	b64 "encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 )
@@ -18,6 +19,8 @@ const (
 	PROJECT_FINDINGS_URL = "/api/v1/finding/project"
 	PROJECT_LOOKUP_URL   = "/api/v1/project/lookup"
 	PROJECT_CREATE_URL   = "/api/v1/project"
+	PROJECT_ALL_URL      = "/api/v1/project"
+	PROJECT_UPDATE_URL   = "/api/v1/project"
 	BOM_TOKEN_URL        = "/api/v1/bom/token"
 	API_POLLING_STEP     = 5 * time.Second
 )
@@ -262,39 +265,132 @@ type Project struct {
 	Description string `json:"description"`
 }
 
-func (apiClient ApiClient) LookupOrCreateProject(projectName, projectVersion string) (projectId string, err error) {
-	client := apiClient.getHttpClient()
-	result := Project{}
-	v := url.Values{}
-	v.Set("name", projectName)
-	if projectVersion != "" {
-		v.Set("version", projectVersion)
+func (apiClient ApiClient) LookupOrCreateProject(projectName, projectVersion string) (projectId string, versionDifferent bool, err error) {
+
+	projectId = ""
+	if projectName == "" {
+		return "", false, errors.New("projectName is required")
 	}
-	req, err := http.NewRequest(http.MethodGet, apiClient.ApiUrl+PROJECT_LOOKUP_URL+"?"+v.Encode(), nil)
+
+	//first lookup by project / version
+	if projectVersion != "" {
+		projectId, err = apiClient.findProjectByNameVersion(projectName, projectVersion)
+		if err != nil {
+			return "", false, err
+		}
+		if projectId != "" {
+			return projectId, false, nil
+		}
+	}
+
+	projectId, err = apiClient.findProjectByName(projectName)
+	if err != nil {
+		return "", false, err
+	}
+	if projectId != "" {
+		return projectId, true, nil
+	}
+
+	if projectId == "" {
+		projectId, err = apiClient.createProject(projectName, projectVersion)
+		if err != nil {
+			return "", false, err
+		}
+		if projectId != "" {
+			return projectId, false, nil
+		}
+	}
+
+	return projectId, false, nil
+}
+
+func (apiClient ApiClient) UpdateProjectVersion(projectUUID, projectName, projectVersion string) error {
+	client := apiClient.getHttpClient()
+	p := Project{Name: projectName, Version: projectVersion, Uuid: projectUUID}
+	payloadJson, err := json.Marshal(p)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, apiClient.ApiUrl+PROJECT_UPDATE_URL, bytes.NewBuffer(payloadJson))
+	if err != nil {
+		return err
+	}
 	req.Header.Add("X-API-Key", apiClient.ApiKey)
 	req.Header.Add("Content-Type", "application/json")
 	resp, err := client.Do(req)
 
 	if err != nil {
-		return
+		return err
 	}
-
 	defer resp.Body.Close()
+
 	err = apiClient.checkRespStatusCode(resp.StatusCode)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (apiClient ApiClient) findProjectByNameVersion(projectName, projectVersion string) (projectId string, err error) {
+	client := apiClient.getHttpClient()
+	result := Project{}
+	v := url.Values{}
+	v.Set("name", projectName)
+	v.Set("version", projectVersion)
+
+	req, err := http.NewRequest(http.MethodGet, apiClient.ApiUrl+PROJECT_LOOKUP_URL+"?"+v.Encode(), nil)
+	req.Header.Add("X-API-Key", apiClient.ApiKey)
+	req.Header.Add("Content-Type", "application/json")
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode == 404 {
-		return apiClient.createProject(projectName, projectVersion)
+		return "", nil
 	}
 
+	err = apiClient.checkRespStatusCode(resp.StatusCode)
 	if err != nil {
-		return
+		return "", err
 	}
+
 	err = json.NewDecoder(resp.Body).Decode(&result)
-
 	if err != nil {
-		return
+		return "", err
 	}
 	return result.Uuid, nil
+}
+
+func (apiClient ApiClient) findProjectByName(projectName string) (projectId string, err error) {
+	projects := []Project{}
+	client := apiClient.getHttpClient()
+	req, err := http.NewRequest(http.MethodGet, apiClient.ApiUrl+PROJECT_ALL_URL, nil)
+	req.Header.Add("X-API-Key", apiClient.ApiKey)
+	req.Header.Add("Content-Type", "application/json")
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	err = apiClient.checkRespStatusCode(resp.StatusCode)
+	if err != nil {
+		return "", err
+	}
+	err = json.NewDecoder(resp.Body).Decode(&projects)
+	if err != nil {
+		return "", err
+	}
+
+	for _, p := range projects {
+		if strings.ToLower(p.Name) == strings.ToLower(projectName) {
+			return p.Uuid, nil
+		}
+	}
+	return "", nil
 }
 
 func (apiClient ApiClient) createProject(projectName, projectVersion string) (projectId string, err error) {

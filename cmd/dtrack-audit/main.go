@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
-	"github.com/ozontech/dtrack-audit/internal/dtrack"
 	"os"
 	"time"
+
+	"github.com/ozontech/dtrack-audit/internal/dtrack"
 )
 
 func checkError(e error) {
@@ -26,16 +27,18 @@ func main() {
 		os.Exit(0)
 	}
 
+	versionDifferent := false
 	apiClient := dtrack.ApiClient{ApiKey: config.ApiKey, ApiUrl: config.ApiUrl}
 
 	// Try to find project by name or create it
 	if config.AutoCreateProject && config.ProjectId == "" {
-		config.ProjectId, err = apiClient.LookupOrCreateProject(config.ProjectName, config.ProjectVersion)
+		config.ProjectId, versionDifferent, err = apiClient.LookupOrCreateProject(config.ProjectName, config.ProjectVersion)
 		checkError(err)
 	}
 
 	// ProjectId is also required to call Dtrack API and deal with projects
 	if config.ProjectId == "" {
+		fmt.Println("ProjectId is required if auto create project (-a) not supplied")
 		dtrack.Usage()
 		os.Exit(0)
 	}
@@ -45,6 +48,11 @@ func main() {
 
 	if uploadResult.Token != "" {
 		fmt.Printf("SBOM file is successfully uploaded to DTrack API. Result token is %s\n", uploadResult.Token)
+	}
+
+	if versionDifferent && config.ProjectVersion != "" {
+		err = apiClient.UpdateProjectVersion(config.ProjectId, config.ProjectName, config.ProjectVersion)
+		checkError(err)
 	}
 
 	// In Sync mode we're waiting for findings from Dtrack
@@ -63,7 +71,7 @@ func main() {
 			dtrack.PrintForUser(findings, config)
 		}
 		// For CI/CD integration
-		// Break corresponding CI/CD job to make developers 
+		// Break corresponding CI/CD job to make developers
 		// pay attention to findings
 		if len(findings) > 0 {
 			os.Exit(1)
