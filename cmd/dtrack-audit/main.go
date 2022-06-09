@@ -27,12 +27,15 @@ func main() {
 		os.Exit(0)
 	}
 
-	versionDifferent := false
+	var searchResult dtrack.ProjectSearchResult
+
+	//versionDifferent := false
 	apiClient := dtrack.ApiClient{ApiKey: config.ApiKey, ApiUrl: config.ApiUrl}
 
 	// Try to find project by name or create it
 	if config.AutoCreateProject && config.ProjectId == "" {
-		config.ProjectId, versionDifferent, err = apiClient.LookupOrCreateProject(config.ProjectName, config.ProjectVersion)
+		searchResult, err = apiClient.LookupOrCreateProject(config.ProjectName, config.ProjectVersion)
+		config.ProjectId = searchResult.Project.Uuid
 		checkError(err)
 	}
 
@@ -50,8 +53,8 @@ func main() {
 		fmt.Printf("SBOM file is successfully uploaded to DTrack API. Result token is %s\n", uploadResult.Token)
 	}
 
-	if versionDifferent && config.ProjectVersion != "" {
-		err = apiClient.UpdateProjectVersion(config.ProjectId, config.ProjectName, config.ProjectVersion)
+	if searchResult.VersionDifferent && config.ProjectVersion != "" {
+		err = apiClient.UpdateProjectVersion(config.ProjectId, config.ProjectVersion)
 		checkError(err)
 	}
 
