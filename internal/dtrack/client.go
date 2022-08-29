@@ -2,6 +2,7 @@ package dtrack
 
 import (
 	"bytes"
+	"crypto/tls"
 	b64 "encoding/base64"
 	"encoding/json"
 	"errors"
@@ -138,6 +139,7 @@ func (apiClient ApiClient) getHttpClient() *http.Client {
 	// See https://github.com/DependencyTrack/dependency-track/issues/474
 	tr := &http.Transport{
 		DisableCompression: true,
+		TLSClientConfig:    &tls.Config{InsecureSkipVerify: true},
 	}
 	return &http.Client{Transport: tr}
 }
@@ -386,7 +388,7 @@ func (apiClient ApiClient) findProjectByName(projectName string) (Project, error
 	projects := []Project{}
 	result := Project{}
 	client := apiClient.getHttpClient()
-	req, _ := http.NewRequest(http.MethodGet, apiClient.ApiUrl+PROJECT_ALL_URL, nil)
+	req, _ := http.NewRequest(http.MethodGet, apiClient.ApiUrl+PROJECT_ALL_URL+"?excludeInactive=true&pageSize=600&pageNumber=1", nil)
 	req.Header.Add("X-API-Key", apiClient.ApiKey)
 	req.Header.Add("Content-Type", "application/json")
 	resp, err := client.Do(req)
