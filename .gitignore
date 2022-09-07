@@ -1,4 +1,6 @@
 bom.xml
+bom.json
 tags
 .idea/
 Session.vim
+dtrack-audit
