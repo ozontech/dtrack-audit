@@ -38,6 +38,8 @@ func main() {
 	if config.ProjectId == "" {
 		dtrack.Usage()
 		os.Exit(0)
+	} else {
+		fmt.Printf("PROJECT_UUID: %s\n", config.ProjectId)
 	}
 
 	uploadResult, err := apiClient.Upload(config.InputFileName, config.ProjectId)
